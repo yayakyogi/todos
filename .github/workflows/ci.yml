@@ -30,7 +30,7 @@ jobs:
           --health-retries 10
     env:
       # renovate: datasource=pypi depName=poetry
-      POETRY_VERSION: "2.4.1"
+      POETRY_VERSION: "2.5.1"
       # tests/conftest.py creates and drops todo_test through the "postgres" database.
       DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/todo
       TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/todo_test
