@@ -6,7 +6,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     POETRY_VIRTUALENVS_CREATE=false \
     POETRY_NO_INTERACTION=1
 
-RUN pip install --no-cache-dir poetry==2.4.1
+# renovate: datasource=pypi depName=poetry
+ARG POETRY_VERSION=2.4.1
+RUN pip install --no-cache-dir poetry==${POETRY_VERSION}
 
 WORKDIR /app
 

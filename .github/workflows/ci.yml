@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Cancel a running check when new commits are pushed to the same branch.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: todo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      # renovate: datasource=pypi depName=poetry
+      POETRY_VERSION: "2.4.1"
+      # tests/conftest.py creates and drops todo_test through the "postgres" database.
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/todo
+      TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/todo_test
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - run: pipx install "poetry==${POETRY_VERSION}"
+      - run: poetry install
+      - run: poetry run pytest
+
+  web:
+    name: Web check & build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4"
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - run: bun run build
+
+  docker:
+    name: Docker build & smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: cp .env.example .env
+      - name: Build dev images
+        run: docker compose build
+      - name: Start production-like stack
+        run: docker compose -f compose.yaml -f compose.prod.yaml up -d --build --wait
+      - name: Smoke test through nginx
+        run: |
+          curl -fsS http://localhost:8080/ > /dev/null
+          curl -fsS -X POST http://localhost:8080/api/todos \
+            -H 'Content-Type: application/json' -d '{"title":"ci"}'
+          curl -fsS http://localhost:8080/api/todos
+      - name: Logs on failure
+        if: failure()
+        run: docker compose -f compose.yaml -f compose.prod.yaml logs
+      - name: Stop
+        if: always()
+        run: docker compose -f compose.yaml -f compose.prod.yaml down -v
