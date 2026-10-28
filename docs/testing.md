@@ -106,3 +106,16 @@ The web app has no automated tests yet. Type-check it with:
 cd web
 bun run check
 ```
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every pull request (including the ones Renovate opens) and
+on every push to `main`. Its three jobs run in parallel:
+
+| Job | What it does |
+|---|---|
+| **API tests** | Starts a `postgres:18-alpine` service, installs the API with Poetry and runs `pytest` against it |
+| **Web check & build** | `bun install --frozen-lockfile`, `bun run check`, `bun run build` |
+| **Docker build & smoke test** | Builds the dev images, starts the production-like stack, then creates and lists a todo through nginx at `localhost:8080` |
+
+If the Docker job fails, its last step prints the container logs.

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Versions marked with a '# renovate:' comment, e.g. Poetry in api/Dockerfile and CI",
+      "managerFilePatterns": ["/(^|/)Dockerfile$/", "/^\\.github/workflows/.+\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+(?:ARG\\s+)?\\S+?[=:]\\s*\"?(?<currentValue>[\\w.]+)\"?"
+      ]
+    }
+  ]
+}

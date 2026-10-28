@@ -1,5 +1,7 @@
 # Todos
 
+[![CI](https://github.com/yayakyogi/todos/actions/workflows/ci.yml/badge.svg)](https://github.com/yayakyogi/todos/actions/workflows/ci.yml)
+
 A small full-stack todo app, organised as a monorepo:
 
 - **`api/`**: a REST API built with FastAPI, SQLAlchemy and PostgreSQL.
@@ -89,6 +91,22 @@ and point `DATABASE_URL` at your database in `.env`. See [docs/docker.md](docs/d
 
 You can also run each project without Docker; see [api/README.md](api/README.md) and
 [web/README.md](web/README.md).
+
+## Dependency updates
+
+[Renovate](https://docs.renovatebot.com/) (Mend Renovate GitHub App) opens a pull request for
+every outdated dependency: Python packages (`api/pyproject.toml`), web packages
+(`web/package.json`), Docker images (Dockerfiles and `compose.yaml`) and GitHub Actions.
+CI runs on each of these PRs; merge them once the checks are green. The **Dependency Dashboard**
+issue lists all pending updates. Configuration: [`renovate.json`](renovate.json).
+
+To track a version that Renovate does not detect on its own, put a comment above it, as done
+for Poetry in `api/Dockerfile` and `.github/workflows/ci.yml`:
+
+```dockerfile
+# renovate: datasource=pypi depName=poetry
+ARG POETRY_VERSION=2.4.1
+```
 
 ## Documentation
 
