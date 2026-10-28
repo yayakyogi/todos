@@ -1,0 +1,32 @@
+# Development overrides, loaded automatically by `docker compose up`.
+# Source code is mounted into the containers, so changes reload without a rebuild.
+services:
+  db:
+    ports:
+      # 5433 on the host, so it does not clash with a local Postgres on 5432.
+      - "${DB_HOST_PORT:-5433}:5432"
+
+  api:
+    # Separate tag per mode, so switching modes never reuses the other image.
+    image: todos-api:dev
+    build:
+      target: dev
+    volumes:
+      - ./api:/app
+    ports:
+      - "${API_PORT:-8000}:8000"
+
+  web:
+    # Separate tag per mode, so switching modes never reuses the other image.
+    image: todos-web:dev
+    build:
+      target: dev
+    environment:
+      API_URL: http://api:8000
+    volumes:
+      - ./web:/app
+      # Keep the container's own node_modules and SvelteKit output, not the host's.
+      - /app/node_modules
+      - /app/.svelte-kit
+    ports:
+      - "${WEB_DEV_PORT:-5173}:5173"

@@ -1,0 +1,54 @@
+# Base services shared by dev and prod.
+#   dev:  docker compose up --build                      (+ compose.override.yaml)
+#   prod: docker compose -f compose.yaml -f compose.prod.yaml up --build
+services:
+  db:
+    image: postgres:18-alpine
+    # Only started when COMPOSE_PROFILES contains "db" (see .env).
+    # Leave it out to use an external database through DATABASE_URL.
+    profiles: [db]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-todo}
+    volumes:
+      # Postgres 18+ keeps data in a versioned subdirectory of /var/lib/postgresql.
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./api
+    environment:
+      ENV: ${ENV:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://postgres:postgres@db:5432/todo}
+      TEST_DATABASE_URL: ${TEST_DATABASE_URL:-postgresql+psycopg://postgres:postgres@db:5432/todo_test}
+    depends_on:
+      db:
+        condition: service_healthy
+        # Lets the API start without the db service when using an external database.
+        required: false
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web
+    depends_on:
+      api:
+        # Wait until the API answers, so the first requests do not get a 502.
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

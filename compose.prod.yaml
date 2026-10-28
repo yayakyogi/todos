@@ -1,0 +1,19 @@
+# Production-like overrides: images contain the code, no mounts, no reload.
+#   docker compose -f compose.yaml -f compose.prod.yaml up --build
+# Only nginx (web) is published; it serves the SPA and proxies /api to the API.
+services:
+  api:
+    # Separate tag per mode, so switching modes never reuses the other image.
+    image: todos-api:prod
+    build:
+      target: prod
+    environment:
+      ENV: production
+
+  web:
+    # Separate tag per mode, so switching modes never reuses the other image.
+    image: todos-web:prod
+    build:
+      target: prod
+    ports:
+      - "${WEB_PORT:-8080}:80"
