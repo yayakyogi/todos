@@ -3,7 +3,7 @@
 #   prod: docker compose -f compose.yaml -f compose.prod.yaml up --build
 services:
   db:
-    image: postgres:18-alpine
+    image: postgres:19-alpine
     # Only started when COMPOSE_PROFILES contains "db" (see .env).
     # Leave it out to use an external database through DATABASE_URL.
     profiles: [db]
